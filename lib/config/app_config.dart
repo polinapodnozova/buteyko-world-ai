@@ -1,11 +1,12 @@
 class AppConfig {
-  // Replace with your actual Gemini API key
-  // Get one from: https://aistudio.google.com/app/apikey
-  static const String geminiApiKey = 'AIzaSyCWoE_fc9rvLPk0PZuqp8dMoJEyOlYEAi4';
+  // SECURITY: API keys should be loaded from environment variables
+  // Never commit actual API keys to version control!
+  // 
+  // For development: Create a .env file (see .env.example)
+  // For production: Use platform-specific secure storage or environment variables
+  static const String geminiApiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: 'YOUR_GEMINI_API_KEY_HERE');
   
-  // Replace with your actual ElevenLabs API key  
-  // Get one from: https://elevenlabs.io (Profile -> API Keys)
-  static const String elevenLabsApiKey = 'sk_e757680202039e0b902bf978aeb1b29b835bf00ddab083a8';
+  static const String elevenLabsApiKey = String.fromEnvironment('ELEVENLABS_API_KEY', defaultValue: 'YOUR_ELEVENLABS_API_KEY_HERE');
   
   // App Information
   static const String appName = 'Buteyko World AI';
