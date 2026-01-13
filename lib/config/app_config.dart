@@ -1,12 +1,19 @@
 class AppConfig {
-  // SECURITY: API keys should be loaded from environment variables
-  // Never commit actual API keys to version control!
-  // 
-  // For development: Create a .env file (see .env.example)
-  // For production: Use platform-specific secure storage or environment variables
-  static const String geminiApiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: 'YOUR_GEMINI_API_KEY_HERE');
+  // Backend API URL - This is your secure proxy server
+  // Change this to your deployed backend URL
+  static const String backendUrl = String.fromEnvironment(
+    'BACKEND_URL',
+    defaultValue: 'http://localhost:3000', // For local development
+  );
   
-  static const String elevenLabsApiKey = String.fromEnvironment('ELEVENLABS_API_KEY', defaultValue: 'YOUR_ELEVENLABS_API_KEY_HERE');
+  // Production backend URL (update after deploying backend)
+  static const String productionBackendUrl = 'https://your-backend-url.vercel.app';
+  
+  // Use production URL if not in debug mode
+  static String get apiBaseUrl {
+    const bool isProduction = bool.fromEnvironment('dart.vm.product');
+    return isProduction ? productionBackendUrl : backendUrl;
+  }
   
   // App Information
   static const String appName = 'Buteyko World AI';

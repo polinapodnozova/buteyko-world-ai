@@ -4,48 +4,39 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 
 class GeminiContentService {
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
-
-  /// Generates unique Buteyko breathing guidance using Gemini AI
+  /// Generates unique Buteyko breathing guidance using backend API
   Future<List<Map<String, dynamic>>> generateBreathingGuidance(int durationMinutes) async {
     try {
-      if (AppConfig.geminiApiKey == 'YOUR_GEMINI_API_KEY_HERE') {
-        // Fallback to static content if no API key
-        return _getStaticGuidance();
-      }
-
       final prompt = _createPrompt(durationMinutes);
       
       final response = await http.post(
-        Uri.parse('$_baseUrl?key=${AppConfig.geminiApiKey}'),
+        Uri.parse('${AppConfig.apiBaseUrl}/api/gemini/generate'),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'contents': [{
-            'parts': [{
-              'text': prompt
-            }]
-          }],
-          'generationConfig': {
-            'temperature': 0.8,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 2048,
-          }
+          'prompt': prompt,
+          'durationMinutes': durationMinutes,
         }),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        
+        // Check if backend returned fallback flag
+        if (responseData['useFallback'] == true) {
+          print('Backend requested fallback, using static guidance');
+          return _getStaticGuidance();
+        }
+        
         final generatedText = responseData['candidates'][0]['content']['parts'][0]['text'];
         return _parseGuidanceSteps(generatedText);
       } else {
-        print('Gemini API Error: ${response.statusCode} - ${response.body}');
+        print('Backend API Error: ${response.statusCode} - ${response.body}');
         return _getStaticGuidance();
       }
     } catch (e) {
-      print('Gemini Error: $e');
+      print('Gemini Service Error: $e');
       return _getStaticGuidance();
     }
   }

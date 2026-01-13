@@ -5,47 +5,42 @@ import 'package:audioplayers/audioplayers.dart';
 import '../config/app_config.dart';
 
 class ElevenLabsTTSService {
-  static const String _baseUrl = 'https://api.elevenlabs.io/v1/text-to-speech';
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
 
-  /// Speaks the provided text using ElevenLabs Text-to-Speech
+  /// Speaks the provided text using backend TTS API
   Future<bool> speakText(String text, String voiceId) async {
     try {
-      if (AppConfig.elevenLabsApiKey == 'YOUR_ELEVENLABS_API_KEY_HERE') {
-        // Fallback for development - just print the text
-        print('TTS (No API Key): $text');
-        await Future.delayed(Duration(seconds: 3)); // Simulate speech time
-        return true;
-      }
-
-      final url = '$_baseUrl/$voiceId';
-      
       final response = await http.post(
-        Uri.parse(url),
+        Uri.parse('${AppConfig.apiBaseUrl}/api/elevenlabs/tts'),
         headers: {
-          'Accept': 'audio/mpeg',
           'Content-Type': 'application/json',
-          'xi-api-key': AppConfig.elevenLabsApiKey,
         },
         body: jsonEncode({
           'text': text,
-          'model_id': AppConfig.elevenLabsModel,
-          'voice_settings': {
-            'stability': AppConfig.elevenLabsStability,
-            'similarity_boost': AppConfig.elevenLabsSimilarity,
-            'style': 0.0,
-            'use_speaker_boost': true,
-          }
+          'voiceId': voiceId,
+          'model': AppConfig.elevenLabsModel,
+          'stability': AppConfig.elevenLabsStability,
+          'similarity': AppConfig.elevenLabsSimilarity,
         }),
       );
 
       if (response.statusCode == 200) {
-        // ElevenLabs returns audio directly as bytes
+        // Check if it's JSON error response
+        final contentType = response.headers['content-type'];
+        if (contentType?.contains('application/json') == true) {
+          final jsonResponse = jsonDecode(response.body);
+          if (jsonResponse['useFallback'] == true) {
+            print('Backend TTS unavailable, using fallback');
+            await Future.delayed(Duration(seconds: 3));
+            return true;
+          }
+        }
+        
+        // Backend returns audio bytes
         final audioBytes = response.bodyBytes;
         
         try {
-          // For web: create blob URL and play
           _isPlaying = true;
           
           // Create a data URL for the audio
@@ -67,12 +62,17 @@ class ElevenLabsTTSService {
           return true;
         }
       } else {
-        print('ElevenLabs TTS API Error: ${response.statusCode} - ${response.body}');
-        return false;
+        print('Backend TTS API Error: ${response.statusCode} - ${response.body}');
+        // Fallback for development
+        print('TTS Fallback: $text');
+        await Future.delayed(Duration(seconds: 3));
+        return true;
       }
     } catch (e) {
       print('TTS Error: $e');
-      return false;
+      // Fallback
+      await Future.delayed(Duration(seconds: 3));
+      return true;
     }
   }
 
